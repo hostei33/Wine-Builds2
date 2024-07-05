@@ -303,12 +303,8 @@ else
     fi
     patch -d wine -Np1 < "${scriptdir}"/ndis.patch
     patch -d wine -Np1 < "${scriptdir}"/virtualmemory.patch
-    echo "Applying additional address space patch... (credits to Bylaws)"
-    wget -O address-space.patch https://github.com/bylaws/wine/commit/c12890cafb580764c076e4231636cafaf6e35089.patch
-    patch -p1 < address-space.patch || {
-        echo "This patch did not apply. Stopping..."
-	exit 1
-    }
+    
+    
     
     
     
