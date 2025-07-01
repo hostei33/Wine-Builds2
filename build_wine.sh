@@ -38,7 +38,7 @@ export WINE_BRANCH="${WINE_BRANCH:-staging}"
 # proton_7.0, experimental_7.0, proton_8.0, experimental_8.0, experimental_9.0
 # bleeding-edge
 # Leave empty to use the default branch.
-export PROTON_BRANCH="${PROTON_BRANCH:-proton_9.0}"
+export PROTON_BRANCH="${PROTON_BRANCH:-proton_10.0}"
 
 # Sometimes Wine and Staging versions don't match (for example, 5.15.2).
 # Leave this empty to use Staging version that matches the Wine version.
@@ -207,8 +207,7 @@ if [ -n "${CUSTOM_SRC_PATH}" ]; then
 	BUILD_NAME="${WINE_VERSION}"-custom
 elif [ "$WINE_BRANCH" = "staging-tkg" ] || [ "$WINE_BRANCH" = "staging-tkg-ntsync" ]; then
 	if [ "$WINE_BRANCH" = "staging-tkg" ] && [ "${EXPERIMENTAL_WOW64}" = "true" ]; then
-		git clone https://github.com/hostei33/wine-tkg wine -b glibc10.10
-		
+		git clone https://github.com/Kron4ek/wine-tkg wine -b wow64
 	else
 		if [ "$WINE_BRANCH" = "staging-tkg" ]; then
 			git clone https://github.com/Kron4ek/wine-tkg wine
@@ -223,11 +222,11 @@ elif [ "$WINE_BRANCH" = "proton" ]; then
 	if [ -z "${PROTON_BRANCH}" ]; then
 		git clone https://github.com/ValveSoftware/wine
 	else
-		git clone https://github.com/ValveSoftware/wine -b "${PROTON_BRANCH}"
+		git clone https://github.com/hostei33/wine-tkg -b proton9.0
 	fi
 
 	WINE_VERSION="$(cat wine/VERSION | tail -c +14)-$(git -C wine rev-parse --short HEAD)"
-	if [[ "${PROTON_BRANCH}" == "experimental_"* ]] || [ "${PROTON_BRANCH}" = "bleeding-edge" ]; then
+	if [[ "${PROTON_BRANCH}" == "proton9"* ]] || [ "${PROTON_BRANCH}" = "bleeding-edge" ]; then
 		patch -d wine -Np1 < "${scriptdir}"/proton-opencl.patch
 		BUILD_NAME=proton-exp-"${WINE_VERSION}"
 	else
