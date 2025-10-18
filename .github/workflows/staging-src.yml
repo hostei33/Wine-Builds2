@@ -12,22 +12,29 @@ jobs:
       - name: Prepare Wine Staging Source
         run: |
           sudo apt update
-          sudo apt install -y perl git wget xz-utils autoconf automake libtool
+          sudo apt install -y perl git wget xz-utils autoconf automake libtool bubblewrap
           chmod +x build_wine.sh
           export WINE_VERSION="latest"
           export WINE_BRANCH="staging"
           export EXPERIMENTAL_WOW64="false"
           export DO_NOT_COMPILE="true"
           
-          ./build_wine.sh
+          # 强制脚本在源码准备完成后退出
+          ./build_wine.sh || true
           
-          # 打包源码
-          cd $HOME/build_wine
-          tar -czf wine-staging-src.tar.gz wine/
-          mv wine-staging-src.tar.gz ../
-          cd ..
-          sha256sum *.tar.gz
-          ls -la *.tar.gz
+          # 检查是否生成了源码目录
+          if [ -d "$HOME/build_wine/wine" ]; then
+            echo "Source code preparation successful"
+            cd $HOME/build_wine
+            tar -czf wine-staging-src.tar.gz wine/
+            mv wine-staging-src.tar.gz ../
+            cd ..
+            sha256sum *.tar.gz
+            ls -la *.tar.gz
+          else
+            echo "Source code preparation failed"
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: Wine-Staging-Source
