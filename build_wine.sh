@@ -66,7 +66,7 @@ export CUSTOM_SRC_PATH=""
 
 # Set to true to download and prepare the source code, but do not compile it.
 # If this variable is set to true, root rights are not required.
-export DO_NOT_COMPILE="false"
+export DO_NOT_COMPILE="${DO_NOT_COMPILE:-false}"
 
 # Set to true to use ccache to speed up subsequent compilations.
 # First compilation will be a little longer, but subsequent compilations
