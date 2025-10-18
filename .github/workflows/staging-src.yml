@@ -1,0 +1,40 @@
+name: Wine-WoW64 CI
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          workflow: bootstraps.yml
+          workflow_conclusion: success
+          path: /opt
+      - name: Build Wine
+        run: |
+          sudo apt update
+          sudo apt install debootstrap perl git wget xz-utils bubblewrap autoconf -y
+          sudo tar -C /opt -xpf /opt/Bootstraps/bootstraps.tar.xz
+          chmod +x build_wine.sh
+          # 配置环境变量：指定staging分支、仅准备源码不编译、使用最新Wine版本
+          export WINE_VERSION="latest"
+          export EXPERIMENTAL_WOW64="true"
+          export DO_NOT_COMPILE="true"
+          
+          # 执行脚本生成staging源码（不编译）
+          WINE_BRANCH=staging ./build_wine.sh
+          
+          # 打包源码目录（匹配build_wine.sh默认BUILD_DIR路径：~/build_wine/wine）
+          tar -Jcf wine-staging-src.tar.xz ~/build_wine/wine/
+          # 生成校验值，便于验证源码包完整性
+          sha256sum wine-staging-src.tar.xz
+      - name: Upload Wine Staging Source
+        uses: actions/upload-artifact@v4
+        with:
+          name: Wine-Staging-Source  #  artifact名称，便于识别源码包
+          path: 
+            ./*.tar.xz  # 上传生成的源码压缩包
+            ./*.sha256sum  # 上传校验文件（若需）
