@@ -1,0 +1,115 @@
+name: Wine-Staging Source Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      wine_version:
+        description: 'Wine version (latest, git, or specific version like 9.0)'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+        - latest
+        - git
+        - 9.0
+        - 8.0
+        - 7.0
+      staging_args:
+        description: 'Staging patch arguments (e.g., --all -W patchset-name)'
+        required: false
+        default: ''
+      staging_version:
+        description: 'Specific Staging version (if different from Wine version)'
+        required: false
+        default: ''
+
+jobs:
+  build-source:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y git wget xz-utils autoconf bubblewrap
+          echo "Dependencies installed successfully"
+          
+      - name: Set environment variables
+        run: |
+          echo "WINE_VERSION: ${{ inputs.wine_version }}"
+          echo "WINE_BRANCH: staging"
+          echo "STAGING_ARGS: ${{ inputs.staging_args }}"
+          echo "STAGING_VERSION: ${{ inputs.staging_version }}"
+          
+      - name: Build Wine Staging Source
+        run: |
+          chmod +x build_wine.sh
+          
+          # 设置环境变量
+          export WINE_VERSION="${{ inputs.wine_version }}"
+          export WINE_BRANCH="staging"
+          export DO_NOT_COMPILE="true"
+          export BUILD_DIR="${HOME}/build_wine_staging_src"
+          
+          # 设置可选的Staging参数
+          if [ -n "${{ inputs.staging_args }}" ]; then
+            export STAGING_ARGS="${{ inputs.staging_args }}"
+          fi
+          
+          if [ -n "${{ inputs.staging_version }}" ]; then
+            export STAGING_VERSION="${{ inputs.staging_version }}"
+          fi
+          
+          echo "Starting Wine Staging source preparation..."
+          ./build_wine.sh
+          
+      - name: Package Source Code
+        run: |
+          cd ${HOME}/build_wine_staging_src
+          
+          # 获取实际的Wine版本信息
+          if [ -f wine/VERSION ]; then
+            WINE_ACTUAL_VERSION=$(cat wine/VERSION | tail -c +14)
+            echo "Actual Wine version: ${WINE_ACTUAL_VERSION}"
+          else
+            WINE_ACTUAL_VERSION="git-$(cd wine && git rev-parse --short HEAD)"
+            echo "Git version: ${WINE_ACTUAL_VERSION}"
+          fi
+          
+          # 创建带版本信息的压缩包
+          tar -czf wine-staging-${WINE_ACTUAL_VERSION}-src-$(date +%Y%m%d).tar.gz wine/
+          mv wine-staging-*-src-*.tar.gz ${GITHUB_WORKSPACE}/
+          
+          echo "Source code packaged: wine-staging-${WINE_ACTUAL_VERSION}-src-$(date +%Y%m%d).tar.gz"
+          
+      - name: Display Source Information
+        run: |
+          cd ${HOME}/build_wine_staging_src/wine
+          echo "=== Wine Staging Source Information ==="
+          echo "Build date: $(date)"
+          echo "Requested version: ${{ inputs.wine_version }}"
+          
+          if [ -f VERSION ]; then
+            echo "Actual Wine version: $(cat VERSION | tail -c +14)"
+          else
+            echo "Git commit: $(git rev-parse --short HEAD)"
+          fi
+          
+          echo "Directory size: $(du -sh . | cut -f1)"
+          echo "Total files: $(find . -type f | wc -l)"
+          echo "Total directories: $(find . -type d | wc -l)"
+          
+      - name: Upload Source Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wine-staging-src-${{ inputs.wine_version }}-$(date +%Y%m%d)
+          path: wine-staging-*-src-*.tar.gz
+          retention-days: 30
+          
+      - name: Cleanup
+        run: |
+          rm -rf ${HOME}/build_wine_staging_src
+          echo "Temporary files cleaned up"
