@@ -26,6 +26,10 @@ jobs:
           tar -czf wine-staging-src.tar.gz wine/
           mv wine-staging-src.tar.gz ../
           cd ..
+          if [ -f "$HOME/wine-staging-src.tar.gz" ]; then
+            echo "将文件从 HOME 目录复制到当前工作目录"
+            cp "$HOME/wine-staging-src.tar.gz" .
+          fi
           sha256sum *.tar.gz
           ls -la *.tar.gz
       - uses: actions/upload-artifact@v4
