@@ -1,4 +1,4 @@
-name: Wine-WoW64 CI
+name: wine-staging-src CI
 on:
   workflow_dispatch:
 jobs:
