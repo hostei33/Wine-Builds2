@@ -1,4 +1,4 @@
-name: Wine-WoW64 SCR
+name: Wine-Staging-Source-Prepare
 
 on:
   workflow_dispatch:
@@ -9,31 +9,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Download artifact
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v3
-        with:
-          workflow: bootstraps.yml
-          workflow_conclusion: success
-          path: /opt
-      - name: Prepare Wine Source Only
+      - name: Prepare Wine Staging Source
         run: |
           sudo apt update
-          sudo apt install debootstrap perl git wget xz-utils bubblewrap autoconf
-          sudo tar -C /opt -xpf /opt/Bootstraps/bootstraps.tar.xz
+          sudo apt install -y perl git wget xz-utils autoconf automake libtool
           chmod +x build_wine.sh
           export WINE_VERSION="latest"
-          export EXPERIMENTAL_WOW64="false"  # 设置为 false，因为我们不编译
-          export DO_NOT_COMPILE="true"       # 关键：设置为 true 只准备源码不编译
+          export WINE_BRANCH="staging"
+          export EXPERIMENTAL_WOW64="false"
+          export DO_NOT_COMPILE="true"
           
-          WINE_BRANCH=staging ./build_wine.sh
+          ./build_wine.sh
           
-          # 手动打包源码目录
+          # 打包源码
           cd $HOME/build_wine
           tar -czf wine-staging-src.tar.gz wine/
           mv wine-staging-src.tar.gz ../
           cd ..
           sha256sum *.tar.gz
+          ls -la *.tar.gz
       - uses: actions/upload-artifact@v4
         with:
           name: Wine-Staging-Source
