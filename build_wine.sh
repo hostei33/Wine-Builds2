@@ -309,9 +309,38 @@ tools/make_specfiles
 autoreconf -f
 cd "${BUILD_DIR}" || exit 1
 
+# 创建源码包
+echo
+echo "Creating source code archive..."
+
+# 确定输出目录
+if touch "${scriptdir}"/write_test 2>/dev/null; then
+	rm -f "${scriptdir}"/write_test
+	result_dir="${scriptdir}"
+else
+	result_dir="${HOME}"
+fi
+
+export XZ_OPT="-9"
+
+# 打包源码
+SOURCE_ARCHIVE_NAME="wine-${BUILD_NAME}-source"
+cp -r wine "${SOURCE_ARCHIVE_NAME}"
+
+# 如果有wine-tkg-config.txt，也包含在源码包中
+if [ -f wine/wine-tkg-config.txt ]; then
+	cp wine/wine-tkg-config.txt "${SOURCE_ARCHIVE_NAME}"/
+fi
+
+tar -Jcf "${SOURCE_ARCHIVE_NAME}.tar.xz" "${SOURCE_ARCHIVE_NAME}"
+mv "${SOURCE_ARCHIVE_NAME}.tar.xz" "${result_dir}"
+
+echo "Source code archive created: ${result_dir}/${SOURCE_ARCHIVE_NAME}.tar.xz"
+
 if [ "${DO_NOT_COMPILE}" = "true" ]; then
 	clear
 	echo "DO_NOT_COMPILE is set to true"
+	echo "Source code archive has been created at ${result_dir}/${SOURCE_ARCHIVE_NAME}.tar.xz"
 	echo "Force exiting"
 	exit
 fi
@@ -371,15 +400,6 @@ echo "Creating and compressing archives..."
 
 cd "${BUILD_DIR}" || exit
 
-if touch "${scriptdir}"/write_test; then
-	rm -f "${scriptdir}"/write_test
-	result_dir="${scriptdir}"
-else
-	result_dir="${HOME}"
-fi
-
-export XZ_OPT="-9"
-
 if [ "${EXPERIMENTAL_WOW64}" = "true" ]; then
 	mv wine-${BUILD_NAME}-amd64 wine-${BUILD_NAME}-amd64-wow64
 
@@ -413,3 +433,4 @@ rm -rf "${BUILD_DIR}"
 echo
 echo "Done"
 echo "The builds should be in ${result_dir}"
+echo "Source code archive is also available at ${result_dir}/${SOURCE_ARCHIVE_NAME}.tar.xz"
